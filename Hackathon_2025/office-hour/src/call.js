@@ -170,6 +170,7 @@ function Call() {
  
   const startListening = () => {
     setListening(true);
+    setPdfText(listening);
     recognition.start();
 
     recognition.onresult = (event) => {
@@ -198,8 +199,8 @@ function Call() {
   };
 
   const stopListening = () => {
-    setListening(false);
     recognition.stop();
+    setListening(false);
   };
 
   const handleFileUpload = async (event) => {
@@ -265,13 +266,6 @@ function Call() {
         >
           {listening ? <FaMicrophone /> : <FaMicrophoneSlash />}
           <input
-            onChange={() => {
-              if (listening) {
-                stopListening();
-              } else {
-                startListening();
-              }
-            }}
             title={listening ? "Stop Listening" : "Start Listening"}
           />
         </ControlButton>
