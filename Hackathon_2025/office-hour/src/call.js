@@ -16,7 +16,7 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(to right, #28a745, #007bff); /* Green to Blue gradient */
+  background: linear-gradient(to right,rgb(167, 40, 125), #007bff); /* Green to Blue gradient */
   position: relative;
   color: white;
 `;
@@ -114,8 +114,26 @@ const ProfileBox = styled.div`
   justify-content: center;
   align-items: center;
   border-radius: 10%;
+  border: 2.5px solid ${(props) => (props.isActive ? "#ff000" : "white")}
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   z-index: 10;
+
+  animation: ${(props) =>
+    props.isActive
+    ? "pulse 1.5s infinite"
+    : "none"}; /*Apply animation if active*/
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px 4px rgba(255, 0, 0, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.5)
+    }
+  }
 `;
 
 const ContentBox = styled.div`
@@ -148,6 +166,7 @@ function Call() {
   const [pdfText, setPdfText] = useState("");
   const [transcript, setTranscript] = useState("");
   const [listening, setListening] = useState(false);
+  const [isActive, setIsActive] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [responseMessage, setResponseMessage] = useState(""); // State to store API response message
   const [noteMessage, setNoteMessage] = useState(""); // State to store API response message
@@ -343,6 +362,7 @@ const stopRecording = async () => {
  
   const startListening = () => {
     setListening(true);
+    setIsActive(true);
     recognition.start();
     
 
@@ -370,12 +390,14 @@ const stopRecording = async () => {
 
     recognition.onend = () => {
       setListening(false);
+      setIsActive(false);
     };
   };
 
   const stopListening = () => {
     recognition.stop();
     setListening(false);
+    setIsActive(false);
   };
 
 
@@ -480,7 +502,8 @@ const stopRecording = async () => {
           <FaPhoneSlash />
         </ControlButton>
       </Controls>
-      <ProfileBox>
+      <ProfileBox isActive={isActive}>
+       
         <ProfileImage src={profileImages[profileName]} alt={profileName} />
       </ProfileBox>
       

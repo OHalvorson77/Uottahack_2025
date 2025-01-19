@@ -7,7 +7,7 @@ const HomeContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(to right, #28a745, #007bff); /* Green to Blue gradient */
+  background: linear-gradient(to right,rgb(167, 40, 125), #007bff); /* Green to Blue gradient */
   color: white;
   align-items: center;
   justify-content: space-between;
