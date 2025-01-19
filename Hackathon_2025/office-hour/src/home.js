@@ -28,6 +28,21 @@ const ProfileGrid = styled.div`
   padding: 20px;
 `;
 
+const ProfileImage = styled.img`
+  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+    background: #f1f1f1;
+  }
+`;
+
 const ProfileIcon = styled.div`
   display: flex;
   flex-direction: column;
@@ -35,9 +50,9 @@ const ProfileIcon = styled.div`
   justify-content: center;
   background: white;
   color: black;
-  border-radius: 50%;
-  width: 100px;
-  height: 100px;
+  border-radius: 20%;
+  width: 300px;
+  height: 300px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
@@ -83,13 +98,22 @@ const Home = () => {
     navigate("/call");
   };
 
+  const profileImages = {
+    "Owen Halvorson": "path/to/owen-image.jpg",  // Replace with actual image paths
+    "Niyol Jha": "path/to/niyol-image.jpg",      // Replace with actual image paths
+    "Brendan Clark": "/", // Replace with actual image paths
+    "User 4": "path/to/user4-image.jpg",          // Replace with actual image paths
+    "User 5": "path/to/user5-image.jpg",           // Replace with actual image paths
+    "User 6": "path/to/user6-image.jpg"           // Replace with actual image paths
+  };
+
   return (
     <HomeContainer>
       <Header>Choose a Tutor!</Header>
       <ProfileGrid>
-        {["Owen Halvorson", "Niyol Jha", "Brendan Clark", "User 4", "User 5"].map((name) => (
+        {["Owen Halvorson", "Niyol Jha", "Brendan Clark", "User 4", "User 5", "User 6"].map((name) => (
           <ProfileIcon key={name} onClick={() => handleProfileClick(name)}>
-            <FaUserCircle size={50} />
+            <ProfileImage src={profileImages[name]} alt={name} />
             <p>{name}</p>
           </ProfileIcon>
         ))}
