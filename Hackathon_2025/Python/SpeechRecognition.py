@@ -17,6 +17,47 @@ elevenclient = ElevenLabs(api_key='sk_f81fc187f14dbe8890f271c2d0ca8a096792d78c8d
 
 client = Groq(api_key="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")
 
+import mysql.connector
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='Hockey@2003',
+        database='hackathon_2025'
+    )
+
+@app.route('/api/videos', methods=['GET'])
+def get_videos():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Query to get videos
+        query = "SELECT id, name, video FROM videos"
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        # Convert BLOB to Base64
+        videos = [
+            {
+                "id": video["id"],
+                "name": video["name"],
+                "video": f"data:video/mp4;base64,{base64.b64encode(video['video']).decode('utf-8')}"
+            }
+            for video in results
+        ]
+
+        return jsonify(videos)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 
 conversation_history = []
 @app.route('/transcript', methods=['POST'])
@@ -24,6 +65,8 @@ def receive_transcript():
     global conversation_history
     data = request.get_json()
     transcript = data.get('transcript', '')
+    voiceID = data.get('voiceID', '')
+
 
     if transcript in ['Stop.', 'stop', 'Stop']:
         conversation_history = []
@@ -43,7 +86,7 @@ def receive_transcript():
     model_response = chat_completion.choices[0].message.content
 
     # Generate audio stream
-    audio_stream = elevenclient.text_to_speech.convert_as_stream(text=model_response, voice_id='zaX2nGJAhQF8XhOyv5iY', model_id='eleven_multilingual_v2')
+    audio_stream = elevenclient.text_to_speech.convert_as_stream(text=model_response, voice_id=voiceID, model_id='eleven_multilingual_v2')
 
     # Collect audio data into a byte stream
     audio_data = b''.join(chunk for chunk in audio_stream if isinstance(chunk, bytes))

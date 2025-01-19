@@ -30,8 +30,8 @@ const ProfileGrid = styled.div`
 
 const ProfileImage = styled.img`
   border-radius: 50%;
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
   object-fit: cover;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
@@ -51,8 +51,8 @@ const ProfileIcon = styled.div`
   background: white;
   color: black;
   border-radius: 20%;
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
@@ -95,23 +95,23 @@ const Tab = styled.div`
 const Home = () => {
     const navigate = useNavigate();
   const handleProfileClick = (profileName) => {
-    navigate("/call");
+    navigate(`/call?profileName=${profileName}`);
   };
 
   const profileImages = {
-    "Owen Halvorson": "path/to/owen-image.jpg",  // Replace with actual image paths
-    "Niyol Jha": "path/to/niyol-image.jpg",      // Replace with actual image paths
-    "Brendan Clark": "/", // Replace with actual image paths
-    "User 4": "path/to/user4-image.jpg",          // Replace with actual image paths
-    "User 5": "path/to/user5-image.jpg",           // Replace with actual image paths
-    "User 6": "path/to/user6-image.jpg"           // Replace with actual image paths
+    "Owen Halvorson": "./OwenHalvorson1.png",  // Replace with actual image paths
+    "Niyol Jha": "./NiyolJha.png",      // Replace with actual image paths
+    "Brendan Clark": "./brendo.png",             // Replace with actual image paths
+    "Madison Holdsworth": "./MH2.png",           // Replace with actual image paths
+    "Tanya Gibbler" : "./TanyaGibbler.png",      // Replace with actual image paths
+    "Frank Woo": "./FrankWoo.png"                // Replace with actual image paths
   };
 
   return (
     <HomeContainer>
       <Header>Choose a Tutor!</Header>
       <ProfileGrid>
-        {["Owen Halvorson", "Niyol Jha", "Brendan Clark", "User 4", "User 5", "User 6"].map((name) => (
+        {["Owen Halvorson", "Niyol Jha", "Brendan Clark", "Madison Holdsworth", "Tanya Gibbler", "Frank Woo"].map((name) => (
           <ProfileIcon key={name} onClick={() => handleProfileClick(name)}>
             <ProfileImage src={profileImages[name]} alt={name} />
             <p>{name}</p>

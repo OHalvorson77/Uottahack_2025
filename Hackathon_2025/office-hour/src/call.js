@@ -1,11 +1,14 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaFileUpload, FaUserCircle, FaPen } from "react-icons/fa";
+import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaFileUpload, FaUserCircle, FaPen, FaVideo, FaStop } from "react-icons/fa";
 import axios from 'axios';
 
+import { useLocation } from 'react-router-dom';
 
 import { useNavigate } from "react-router-dom";
+
+import { saveAs } from "file-saver";
 
 
 // Styled Components
@@ -105,8 +108,8 @@ const ProfileBox = styled.div`
   right: 5%;
   background: rgba(0, 0, 0, 0.7);
   color: white;
-  width: 150px;
-  height: 150px;
+  width: 200px;
+  height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -122,7 +125,26 @@ const ContentBox = styled.div`
   margin-top: 20px;
 `;
 
+const ProfileImage = styled.img`
+  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+    background: #f1f1f1;
+  }
+`;
+
+
 function Call() {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const profileName = params.get('profileName');
   const [pdfText, setPdfText] = useState("");
   const [transcript, setTranscript] = useState("");
   const [listening, setListening] = useState(false);
@@ -132,9 +154,32 @@ function Call() {
   const silenceTimeout = useRef(null); // Reference to the timeout for silence detection
   const [displayedMessage, setDisplayedMessage] =useState("");
 
+  const profileImages = {
+    "Owen Halvorson": "./OwenHalvorson1.png",  // Replace with actual image paths
+    "Niyol Jha": "./NiyolJha.png",      // Replace with actual image paths
+    "Brendan Clark": "./brendo.png",             // Replace with actual image paths
+    "Madison Holdsworth": "./MH2.png",           // Replace with actual image paths
+    "Tanya Gibbler" : "./TanyaGibbler.png",      // Replace with actual image paths
+    "Frank Woo": "./FrankWoo.png"                // Replace with actual image paths
+  };
+
+  const voiceIDs = {
+    "Owen Halvorson": "CZnaDN40v7JYigHcaARz",  // Replace with actual image paths
+    "Niyol Jha": "Ro2kf5sy0BztesU9FJcd",      // Replace with actual image paths
+    "Brendan Clark": "zaX2nGJAhQF8XhOyv5iY",             // Replace with actual image paths
+    "Madison Holdsworth": "MF3mGyEYCl7XYWbV9V6O",           // Replace with actual image paths
+    "Tanya Gibbler" : "oWAxZDx7w5VEj9dCyTzz",      // Replace with actual image paths
+    "Frank Woo": "bVMeCyTHy58xNoL34h3p"                // Replace with actual image paths
+  };
+
   const typingSpeed = 100;
 
   const [markerIcons, setMarkerIcons] = useState([]);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState([]);
+  const mediaRecorderRef = useRef(null);
+  const videoRef = useRef(null);
 
   const navigate = useNavigate();
   const handlePhoneClick = (profileName) => {
@@ -157,6 +202,55 @@ useEffect(() => {
     return () => clearInterval(intervalId);
   }
 }, [noteMessage]);
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true,
+    });
+
+    // Preview the screen in the video element
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+    }
+
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+
+    // Collect data chunks
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        setRecordedChunks((prev) => [...prev, event.data]);
+      }
+    };
+
+    // Start recording
+    mediaRecorder.start();
+    setIsRecording(true);
+  } catch (error) {
+    console.error("Error starting screen recording:", error);
+  }
+};
+
+const stopRecording = () => {
+  if (mediaRecorderRef.current) {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+
+    // Stop all tracks to release resources
+    const tracks = mediaRecorderRef.current.stream.getTracks();
+    tracks.forEach((track) => track.stop());
+  }
+
+  // Save the recording
+  if (recordedChunks.length > 0) {
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    saveAs(blob, "screen-recording.webm"); // Save the file
+    setRecordedChunks([]);
+  }
+};
 
 
    
@@ -181,18 +275,20 @@ useEffect(() => {
 
   const sendTranscriptToAPI = async (transcriptText) => {
     recognition.stop();
+
+    setNoteMessage("");
     try {
       const response = await fetch("http://127.0.0.1:5000/transcript", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ transcript: transcriptText }),
+        body: JSON.stringify({ transcript: transcriptText, voiceID: voiceIDs[profileName] }),
       });
 
       if (response.ok) {
 
-        setNoteMessage("");
+        
         const responseData = await response.json();
         setResponseMessage(responseData.message);
 
@@ -344,6 +440,20 @@ useEffect(() => {
             title="Upload PDF"
           />
         </ControlButton>
+        {/* Start Recording Button */}
+        {!isRecording && (
+          <ControlButton bg="#007bff" hover="#0056b3" onClick={startRecording}>
+            <FaVideo />
+          </ControlButton>
+        )}
+
+        {/* Stop Recording Button */}
+        {isRecording && (
+          <ControlButton bg="#dc3545" hover="#c82333" onClick={stopRecording}>
+            <FaStop />
+          </ControlButton>
+        )}
+
         <ControlButton bg="#dc3545" hover="#c82333" onClick={() => {
             handlePhoneClick();
           }}>
@@ -351,7 +461,7 @@ useEffect(() => {
         </ControlButton>
       </Controls>
       <ProfileBox>
-        <FaUserCircle size={60} />
+        <ProfileImage src={profileImages[profileName]} alt={profileName} />
       </ProfileBox>
       
     </AppContainer>
