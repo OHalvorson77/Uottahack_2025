@@ -58,6 +58,41 @@ def get_videos():
             cursor.close()
             connection.close()
 
+# Upload endpoint
+@app.route('/api/upload', methods=['POST'])
+def upload_video():
+    print("REACHED")
+    if 'video' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    video = request.files['video']
+
+    if video.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        # Read the video file into binary
+        video_data = video.read()
+
+        # Store the video in the database as BLOB
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "INSERT INTO videos (name, video) VALUES (%s, %s)"
+        cursor.execute(query, (video.filename, video_data))
+        connection.commit()
+
+        return jsonify({'message': 'Video uploaded successfully'}), 200
+
+    except Exception as e:
+        print(str(e))
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 
 conversation_history = []
 @app.route('/transcript', methods=['POST'])

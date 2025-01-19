@@ -233,8 +233,7 @@ const startRecording = async () => {
     console.error("Error starting screen recording:", error);
   }
 };
-
-const stopRecording = () => {
+const stopRecording = async () => {
   if (mediaRecorderRef.current) {
     mediaRecorderRef.current.stop();
     setIsRecording(false);
@@ -248,9 +247,30 @@ const stopRecording = () => {
   if (recordedChunks.length > 0) {
     const blob = new Blob(recordedChunks, { type: "video/webm" });
     saveAs(blob, "screen-recording.webm"); // Save the file
-    setRecordedChunks([]);
+
+    // Send the recorded video to the backend
+    try {
+      const formData = new FormData();
+      formData.append("video", blob, "screen-recording.webm");
+
+      const response = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        console.log("Video uploaded successfully");
+      } else {
+        console.error("Error uploading video");
+      }
+    } catch (error) {
+      console.error("Error sending video to server:", error);
+    }
+
+    setRecordedChunks([]); // Clear the chunks
   }
 };
+
 
 
    

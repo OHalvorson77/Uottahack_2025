@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 // Styled Components
@@ -27,22 +26,7 @@ const ProfileGrid = styled.div`
   padding: 20px;
 `;
 
-const ProfileImage = styled.img`
-  border-radius: 50%;
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-
-  &:hover {
-    transform: scale(1.1);
-    background: #f1f1f1;
-  }
-`;
-
-const ProfileIcon = styled.div`
+const VideoBox = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -52,6 +36,7 @@ const ProfileIcon = styled.div`
   border-radius: 20%;
   width: 200px;
   height: 200px;
+  padding: 30px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
@@ -59,6 +44,13 @@ const ProfileIcon = styled.div`
   &:hover {
     transform: scale(1.1);
     background: #f1f1f1;
+  }
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0%;
   }
 
   p {
@@ -91,43 +83,57 @@ const Tab = styled.div`
   }
 `;
 
-const Home = () => {
+const Recordings = () => {
+  const [videos, setVideos] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch video data from the server
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/api/videos"); // Replace with actual endpoint
+        if (response.ok) {
+          const data = await response.json();
+          setVideos(data); // Assuming the response contains an array of video objects
+        } else {
+          console.error("Failed to fetch videos:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   const handleProfileClick = (profileName) => {
     navigate(`/call?profileName=${profileName}`);
   };
 
-  const handleRecordingsClick = () => {
-    navigate("/recordings"); // Navigate to the recordings page
-  };
-
-  const profileImages = {
-    "Owen Halvorson": "./OwenHalvorson1.png",  // Replace with actual image paths
-    "Niyol Jha": "./NiyolJha.png",      // Replace with actual image paths
-    "Brendan Clark": "./brendo.png",             // Replace with actual image paths
-    "Madison Holdsworth": "./MH2.png",           // Replace with actual image paths
-    "Tanya Gibbler" : "./TanyaGibbler.png",      // Replace with actual image paths
-    "Frank Woo": "./FrankWoo.png"                // Replace with actual image paths
+  const handleTutorsClick = () => {
+    navigate("/"); // Navigate to the recordings page
   };
 
   return (
     <HomeContainer>
-      <Header>Choose a Tutor!</Header>
+      <Header>Study Past Recordings!</Header>
       <ProfileGrid>
-        {["Owen Halvorson", "Niyol Jha", "Brendan Clark", "Madison Holdsworth", "Tanya Gibbler", "Frank Woo"].map((name) => (
-          <ProfileIcon key={name} onClick={() => handleProfileClick(name)}>
-            <ProfileImage src={profileImages[name]} alt={name} />
-            <p>{name}</p>
-          </ProfileIcon>
+        {videos.map((video) => (
+          <VideoBox key={video.id} >
+            <video controls>
+              <source src={video.video} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            
+          </VideoBox>
         ))}
       </ProfileGrid>
       <BottomTabs>
-        <Tab>Tutors</Tab>
-        <Tab onClick={handleRecordingsClick}>Recordings</Tab>
+      <Tab onClick={handleTutorsClick}>Tutors</Tab>
+        <Tab>Recordings</Tab>
       </BottomTabs>
     </HomeContainer>
   );
 };
 
-export default Home;
+export default Recordings;
