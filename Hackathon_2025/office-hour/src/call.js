@@ -1,8 +1,13 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaFileUpload, FaUserCircle } from "react-icons/fa";
+import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaFileUpload, FaUserCircle, FaPen } from "react-icons/fa";
 import axios from 'axios';
+
+
+import { useNavigate } from "react-router-dom";
+
+
 // Styled Components
 const AppContainer = styled.div`
   display: flex;
@@ -31,18 +36,31 @@ const VideoGrid = styled.div`
   padding: 10px;
   flex: 1;
 `;
-
 const FullWidthVideoBox = styled.div`
   background: white;
   color: black;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  height: 100%; /* Full viewport height */
   border-radius: 8px;
   overflow: hidden;
   padding: 10px;
+  position: relative;
 `;
+const TextContainer = styled.div`
+  color: red;
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 100%;
+  font-family: 'Permanent Marker', cursive; /* Use a marker-like font */
+  font-size: 20px;
+  font-weight: bold;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+`;
+
+
 
 const Controls = styled.div`
   display: flex;
@@ -110,7 +128,38 @@ function Call() {
   const [listening, setListening] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [responseMessage, setResponseMessage] = useState(""); // State to store API response message
+  const [noteMessage, setNoteMessage] = useState(""); // State to store API response message
   const silenceTimeout = useRef(null); // Reference to the timeout for silence detection
+  const [displayedMessage, setDisplayedMessage] =useState("");
+
+  const typingSpeed = 100;
+
+  const [markerIcons, setMarkerIcons] = useState([]);
+
+  const navigate = useNavigate();
+  const handlePhoneClick = (profileName) => {
+    navigate("/");
+  };
+
+useEffect(() => {
+  if (noteMessage && noteMessage.length > 0) {
+    let index = 0;
+    const intervalId = setInterval(() => {
+      setDisplayedMessage((prev) => prev + noteMessage[index]);
+      setMarkerIcons((prev) => [...prev, index]); // Add the index of the marker icon
+      index += 1;
+
+      if (index === noteMessage.length) {
+        clearInterval(intervalId);
+      }
+    }, typingSpeed);
+
+    return () => clearInterval(intervalId);
+  }
+}, [noteMessage]);
+
+
+   
 
   
 
@@ -128,7 +177,10 @@ function Call() {
   recognition.interimResults = true; // Shows interim results
   recognition.lang = "en-US"; // Language (adjust as needed)
 
+
+
   const sendTranscriptToAPI = async (transcriptText) => {
+    recognition.stop();
     try {
       const response = await fetch("http://127.0.0.1:5000/transcript", {
         method: "POST",
@@ -139,18 +191,23 @@ function Call() {
       });
 
       if (response.ok) {
+
+        setNoteMessage("");
         const responseData = await response.json();
         setResponseMessage(responseData.message);
+
+        setNoteMessage(responseData.notes);
         const audioBlob = await fetchAudio(responseData.audio);
         const audioUrl = URL.createObjectURL(audioBlob);
-
-        setResponseMessage(responseData.message);
         const audio = new Audio(audioUrl);
         audio.play().catch((error) => {
           console.error("Audio playback failed:", error);
         });
         setAudioUrl(audioUrl);
          // Speak the message returned by the API
+
+      
+         setListening(false);
       } else {
         console.error("Failed to send transcript:", response.statusText);
       }
@@ -170,8 +227,8 @@ function Call() {
  
   const startListening = () => {
     setListening(true);
-    setPdfText(listening);
     recognition.start();
+    
 
     recognition.onresult = (event) => {
       const interimTranscript = Array.from(event.results)
@@ -189,6 +246,8 @@ function Call() {
       }, 2000); // Wait for 2 seconds of silence before sending
     };
 
+
+
     recognition.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
     };
@@ -202,6 +261,10 @@ function Call() {
     recognition.stop();
     setListening(false);
   };
+
+
+
+ 
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -222,7 +285,7 @@ function Call() {
           }
           setPdfText(text);
 
-          const response = await fetch("http://127.0.0.1:5000/transcript", {
+          const response = await fetch("http://127.0.0.1:5000/sendNotes", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -244,13 +307,16 @@ function Call() {
 
   return (
     <AppContainer>
-      <Logo>Office-Hour</Logo>
+      
       <VideoGrid>
-        <FullWidthVideoBox>
-          <div style={{ color: 'black', padding: '10px', overflowY: 'scroll', maxHeight: '100%' }}>
-            {pdfText}
-          </div>
-        </FullWidthVideoBox>
+      <FullWidthVideoBox>
+      <TextContainer>
+  {displayedMessage}
+ 
+</TextContainer>
+
+</FullWidthVideoBox>
+
       </VideoGrid>
       <Controls>
         <ControlButton
@@ -278,26 +344,16 @@ function Call() {
             title="Upload PDF"
           />
         </ControlButton>
-        <ControlButton bg="#dc3545" hover="#c82333">
+        <ControlButton bg="#dc3545" hover="#c82333" onClick={() => {
+            handlePhoneClick();
+          }}>
           <FaPhoneSlash />
         </ControlButton>
       </Controls>
       <ProfileBox>
         <FaUserCircle size={60} />
       </ProfileBox>
-      <ContentBox>
-        <p>{listening ? "Listening..." : "Unmute to Speak"}</p>
-        <div style={{ marginTop: "20px", fontSize: "18px", color: "#333" }}>
-          <strong>Transcript:</strong>
-          <p>{transcript}</p>
-        </div>
-        {responseMessage && (
-          <div style={{ marginTop: "20px", fontSize: "18px", color: "#28a745" }}>
-            <strong>Response from API:</strong>
-            <p>{responseMessage}</p>
-          </div>
-        )}
-      </ContentBox>
+      
     </AppContainer>
   );
 }

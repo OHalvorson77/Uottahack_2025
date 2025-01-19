@@ -29,6 +29,7 @@ def receive_transcript():
         conversation_history = []
         return jsonify({"message": "I have been reset"}), 200
 
+    
     # Add the new user message to the conversation history
     conversation_history.append({"role": "user", "content": transcript})
 
@@ -42,7 +43,7 @@ def receive_transcript():
     model_response = chat_completion.choices[0].message.content
 
     # Generate audio stream
-    audio_stream = elevenclient.text_to_speech.convert_as_stream(text=model_response, voice_id='CZnaDN40v7JYigHcaARz', model_id='eleven_multilingual_v2')
+    audio_stream = elevenclient.text_to_speech.convert_as_stream(text=model_response, voice_id='zaX2nGJAhQF8XhOyv5iY', model_id='eleven_multilingual_v2')
 
     # Collect audio data into a byte stream
     audio_data = b''.join(chunk for chunk in audio_stream if isinstance(chunk, bytes))
@@ -53,8 +54,44 @@ def receive_transcript():
     # Add the model's response to the conversation history
     conversation_history.append({"role": "assistant", "content": model_response})
 
+    conversation_history.append({"role": "user", "content": "Can you write a very short jot note explanation of what you just said using math equations if needed"})
+
+
+    chat_completion2 = client.chat.completions.create(
+        messages=conversation_history, 
+        model="llama3-8b-8192"
+    )
+
+    model_response2 = chat_completion2.choices[0].message.content
+
     print(f"Received Transcript: {transcript}")
-    return jsonify({"message": model_response, "audio": audio_base64}), 200
+    return jsonify({"message": model_response, "notes": model_response2, "audio": audio_base64 }), 200 #audio needs to be added
+
+@app.route('/sendNotes', methods=['POST'])
+def send_notes():
+    global conversation_history
+    data = request.get_json()
+    transcript = data.get('transcript', '')
+
+
+
+    # Add the new user message to the conversation history
+    conversation_history.append({"role": "user", "content": transcript})
+
+    # Send the entire conversation history as context
+    chat_completion = client.chat.completions.create(
+        messages=conversation_history, 
+        model="llama3-8b-8192"
+    )
+
+    # Get the model's response
+    model_response = chat_completion.choices[0].message.content
+
+    # Add the model's response to the conversation history
+    conversation_history.append({"role": "assistant", "content": model_response})
+
+    print(f"Received Transcript: {transcript}")
+    return jsonify({"message": model_response}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
